@@ -1,0 +1,270 @@
+@Library("arsenal-shared-libs") _
+
+pipeline {
+    agent any
+
+    options {
+        ansiColor('xterm')
+    }
+
+    environment {
+        TAG_NAME = getTagName()
+        COMMIT_ID = getCommitID()
+
+        RELEASE_TAG = "release-${COMMIT_ID}"
+        TF_REGISTRY_URL = "${AWS_MGMT_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/${TF_IMAGE_NAME}"
+
+        SONAR_CONFIG_ID = "sonar-tactiq"
+        SONAR_SCANNER_VERSION = "3.3.0"
+        SONAR_REGISTRY_URL = "${AWS_MGMT_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/devops-sonar-scanner:${SONAR_SCANNER_VERSION}"
+
+        MGMT_ACCOUNT_ID = "aws-mgmt-account"
+    }
+
+    stages {
+        stage("Reading environment variables") {
+            steps {
+                script {
+                    load "./jenkins.env.groovy"
+
+                    QA_REGISTRY_URL = "${AWS_DEV_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/" + "${REPO_NAME}".replace("{env}", "qa") + ":${RELEASE_TAG}"
+                    PREPROD_REGISTRY_URL = "${AWS_DEV_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/" + "${REPO_NAME}".replace("{env}", "preprod") + ":${GIT_BRANCH}"
+        
+                    PROD_REGISTRY_URL = "${AWS_PROD_ACCOUNT}.dkr.ecr.eu-west-1.amazonaws.com/" + "${REPO_NAME}".replace("{env}", "prod") + ":${GIT_BRANCH}"
+
+                }
+            }
+        }
+
+        stage('Initialize') {
+
+            steps {
+                script {
+                    echo "COMMIT ID : ${COMMIT_ID}"
+                    echo "TAG NAME  : ${TAG_NAME}"
+                    echo "TF_IMAGE NAME : ${TF_IMAGE_NAME}"
+                }
+            }
+        }
+
+        stage('Install') {
+            when { anyOf { branch "debug/*"; branch "develop";  tag  "rc-hotfix-*";  tag  "qa-release-*"; changeRequest target: "develop" } }
+
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'artifactory-eagle-custom-front-ci-bot-pwd', passwordVariable: 'password',  usernameVariable: 'username')]) {
+                    sh '''
+                        set +x
+                        curl -u "$username:$password" https://artifactory.arsenal.mgmt4apps.io/artifactory/api/npm/auth > .npmrc
+                        echo "registry=https://artifactory.arsenal.mgmt4apps.io/artifactory/api/npm/keringtech-npm-eagle-custom-front-aws-master" >> .npmrc
+                    '''
+                }
+                script {
+                    dockerBuild(
+                        image: "${APP_IMAGE_NAME}",
+                        target: "dependencies",
+                        arg: "DOCKER_REGISTRY=${DOCKER_REGISTRY}",
+                        tag: "dependencies-${COMMIT_ID}"
+                    )
+                }
+            }
+        }
+
+        // stage('Source') {
+        //     when { anyOf { branch "debug/*"; branch "develop";  tag  "rc-hotfix-*";  tag  "qa-release-*"; changeRequest target: "develop" } }
+
+        //     steps {
+        //         script {
+        //             dockerBuild(
+        //                 image: "${APP_IMAGE_NAME}",
+        //                 target: "source",
+        //                 arg: "DOCKER_REGISTRY=${DOCKER_REGISTRY}",
+        //                 tag: "source-${COMMIT_ID}"
+        //             )
+        //         }
+        //     }
+        // }
+
+        // stage('Test') {
+        //     when { anyOf { branch "debug/*"; branch "develop";  tag  "rc-hotfix-*";  tag  "qa-release-*"; changeRequest target: "develop" } }
+
+        //     steps {
+        //         script {
+        //             dockerBuild(
+        //                 image: "${APP_IMAGE_NAME}",
+        //                 target: "test",
+        //                 arg: "DOCKER_REGISTRY=${DOCKER_REGISTRY}",
+        //                 tag: "test-${COMMIT_ID}"
+        //             )
+        //         }
+        //     }
+        // }
+
+    //    stage('Sonar Scan') {
+    //         when { anyOf { branch "debug/*"; branch "develop";  tag  "rc-hotfix-*"; } }
+
+    //         steps {
+    //             script {
+    //                 dockerPull(credentialsId: "${MGMT_ACCOUNT_ID}", image_name: "${SONAR_REGISTRY_URL}")
+    //                 dockerTag(src_image: "${SONAR_REGISTRY_URL}", target_image: "devops-sonar-scanner:${SONAR_SCANNER_VERSION}")
+
+    //                 withSonarQubeEnv("${SONAR_CONFIG_ID}") {
+    //                     dockerBuild(
+    //                         image: "${APP_IMAGE_NAME}",
+    //                         target: "sonarqube",
+    //                         tag: "sonar-scan-${COMMIT_ID}"
+    //                     )
+    //                     sonarScan(
+    //                         image: "${APP_IMAGE_NAME}:sonar-scan-${COMMIT_ID}",
+    //                         version: "${RELEASE_TAG}",
+    //                         sonar_url: "${SONAR_HOST_URL}",
+    //                         sonar_token: "${SONAR_AUTH_TOKEN}"
+    //                     )
+    //                 }
+    //             }
+    //         }
+    //     }
+
+        stage('Release') {
+            when { anyOf { branch "debug/*"; branch 'develop';  tag  "rc-hotfix-*"; } }
+
+            steps {
+                script {
+                    dockerBuild(
+                        image: "${APP_IMAGE_NAME}",
+                        target: "release",
+                        arg: "DOCKER_REGISTRY=${DOCKER_REGISTRY}",
+                        tag: "${RELEASE_TAG}"
+                    )
+                }
+            }
+        }
+
+// --- QA STAGE
+
+        stage('Push image qa') {
+            when { anyOf { branch "debug/*"; branch 'develop'} }
+
+            steps {
+                script {
+                    dockerTag(src_image: "${APP_IMAGE_NAME}:${RELEASE_TAG}", target_image: "${QA_REGISTRY_URL}")
+                    dockerPush(credentialsId: "${DEV_ACCOUNT_ID}", image_name: "${QA_REGISTRY_URL}")
+                }
+            }
+        }
+
+        stage('Deploying to qa') {
+            when { anyOf { branch "debug/*"; branch 'develop'} }
+
+            steps {
+                script {
+                    def CLUSTER_NAME = "${CLUSTER}".replace("{env}", "qa")
+                    deployAWSEcs(
+                        credentialsId: "${DEV_ACCOUNT_ID}",
+                        tf_image_name: "${TF_IMAGE_NAME}",
+                        tf_registry_url: "${TF_REGISTRY_URL}",
+                        env: "qa",
+                        service: "${SERVICE_NAME}",
+                        version: "${RELEASE_TAG}",
+                        cluster: "${CLUSTER_NAME}",
+                        ecs_service_name: "${ECS_SERVICE_NAME}"
+                    )
+                }
+            }
+        }
+
+// --- END DEV STAGES
+
+
+// // --- PREPROD STAGES
+
+        // stage('Hotfix Push image preprod') {
+        //     when { tag 'rc-hotfix-*' }
+
+        //     steps {
+        //         script {
+        //             dockerTag(src_image: "${APP_IMAGE_NAME}:${RELEASE_TAG}", target_image: "${PREPROD_REGISTRY_URL}")
+        //             dockerPush(credentialsId: "${DEV_ACCOUNT_ID}", image_name: "${PREPROD_REGISTRY_URL}")
+        //         }
+        //     }
+        // }
+
+        // stage('Releasing preprod version') {
+        //     when { tag 'rc-release-*' }
+
+        //     steps {
+        //         script {
+        //             dockerPull(credentialsId: "${DEV_ACCOUNT_ID}", image_name: "${QA_REGISTRY_URL}")
+        //             dockerTag(src_image: "${QA_REGISTRY_URL}", target_image: "${PREPROD_REGISTRY_URL}")
+        //             dockerPush(credentialsId: "${DEV_ACCOUNT_ID}", image_name: "${PREPROD_REGISTRY_URL}")
+        //         }
+        //     }
+        // }
+
+        // stage('Deploying to preprod') {
+        //     when { anyOf { branch "rc-release-*";  tag  "rc-hotfix-*"} }
+
+        //     steps {
+        //         script {
+        //             def CLUSTER_NAME = "${CLUSTER}".replace("{env}", "preprod")
+        //             deployAWSEcs(
+        //                 credentialsId: "${DEV_ACCOUNT_ID}",
+        //                 tf_image_name: "${TF_IMAGE_NAME}",
+        //                 tf_registry_url: "${TF_REGISTRY_URL}",
+        //                 env: "preprod",
+        //                 service: "${SERVICE_NAME}",
+        //                 version: "${GIT_BRANCH}",
+        //                 cluster: "${CLUSTER_NAME}",
+        //                 ecs_service_name: "${CLUSTER_NAME}-${ECS_SERVICE_NAME}"
+        //             )
+        //         }
+        //     }
+        // }
+
+// // --- END PREPROD STAGES
+
+// // --- PROD STAGES
+
+        // stage('Releasing hotfix prod version') {
+        //     when { tag 'hotfix-*' }
+        //     steps {
+        //         script {
+        //             dockerPull(credentialsId: "${DEV_ACCOUNT_ID}", image_name: "${HOTFIX_PREPROD_REGISTRY_URL}")
+        //             dockerTag(src_image: "${HOTFIX_PREPROD_REGISTRY_URL}", target_image: "${PROD_REGISTRY_URL}")
+        //             dockerPush(credentialsId: "${PROD_ACCOUNT_ID}", image_name: "${PROD_REGISTRY_URL}")
+        //         }
+        //     }
+        // }
+
+        // stage('Releasing prod version') {
+        //     when { tag 'release-*' }
+        //     steps {
+        //         script {
+        //             dockerPull(credentialsId: "${DEV_ACCOUNT_ID}", image_name: "${QA_REGISTRY_URL}")
+        //             dockerTag(src_image: "${QA_REGISTRY_URL}", target_image: "${PROD_REGISTRY_URL}")
+        //             dockerPush(credentialsId: "${PROD_ACCOUNT_ID}", image_name: "${PROD_REGISTRY_URL}")
+        //         }
+        //     }
+        // }
+
+        // stage('Deploying to prod') {
+        //     when { anyOf { branch "release-*";  tag  "hotfix-*"} }
+        //         steps {
+        //         script {
+        //             def CLUSTER_NAME = "${CLUSTER}".replace("{env}", "prod")
+        //             deployAWSEcs(
+        //                 credentialsId: "${PROD_ACCOUNT_ID}",
+        //                 tf_image_name: "${TF_IMAGE_NAME}",
+        //                 tf_registry_url: "${TF_REGISTRY_URL}",
+        //                 env: "prod",
+        //                 service: "${SERVICE_NAME}",
+        //                 version: "${GIT_BRANCH}",
+        //                 cluster: "${CLUSTER_NAME}",
+        //                 ecs_service_name: "${CLUSTER_NAME}-${ECS_SERVICE_NAME}"
+        //             )
+        //         }
+        //     }
+        // }
+
+// --- END PROD STAGES
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "amq-headless-shop-storybook",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "start-storybook ./public -p 6006",
+    "build": "build-storybook"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "6.5.16",
+    "@storybook/addon-actions": "6.5.16",
+    "@storybook/addon-essentials": "6.5.16",
+    "@storybook/addon-interactions": "6.5.16",
+    "@storybook/addon-links": "6.5.16",
+    "@storybook/addon-postcss": "^2.0.0",
+    "@storybook/builder-webpack5": "6.5.16",
+    "@storybook/manager-webpack5": "6.5.16",
+    "@storybook/react": "6.5.16",
+    "node-polyfill-webpack-plugin": "^2.0.1",
+    "postcss": "^8.4.21",
+    "storybook-addon-next": "^1.7.3",
+    "stylelint": "^15.3.0",
+    "stylelint-config-standard": "^31.0.0",
+    "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "util": "^0.12.5"
+  }
+}

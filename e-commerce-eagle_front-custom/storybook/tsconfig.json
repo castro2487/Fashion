@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "**/*.tsx",
+    "../src/**/*.types.ts",
+    "../src/components/functional/DynamicComponentLoader/DynamicComponentLoader.types.ts"
+  ]
+}

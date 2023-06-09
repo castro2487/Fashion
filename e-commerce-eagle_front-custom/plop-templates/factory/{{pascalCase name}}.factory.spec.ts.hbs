@@ -1,0 +1,15 @@
+import { Factory } from '@common/Factory';
+import { {{pascalCase name}}Factory } from './{{pascalCase name}}.factory';
+import { {{pascalCase name}}Model } from './{{pascalCase name}}.model';
+
+describe('{{pascalCase name}} tests',()=>{
+  let factoryInstance: I{{pascalCase name}}Factory;
+
+  beforeEach(() => {
+    factoryInstance = new {{pascalCase name}}Factory ();
+  });
+
+  it('should return the {{pascalCase name}} factory name', () => {
+    expect(factoryInstance._name).toEqual('{{pascalCase name}}Factory');
+  });
+})

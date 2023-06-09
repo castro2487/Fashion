@@ -1,0 +1,1 @@
+export { FramedContent } from './FramedContent';

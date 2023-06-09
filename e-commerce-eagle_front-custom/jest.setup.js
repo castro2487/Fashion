@@ -1,0 +1,26 @@
+import '@testing-library/jest-dom/extend-expect';
+
+process.env = Object.assign(process.env, {
+  NODE_ENV: 'test',
+  APP_ORIGIN: 'https://www.alexandermcqueen.com',
+  APP_INTERNAL_REQUEST_TOKEN:'APP_INTERNAL_REQUEST_TOKEN_TEST_MOCK',
+  APP_SFCC_REQUEST_CLIENT_ID: 'APP_SFCC_REQUEST_CLIENT_ID',
+  APP_SESSION_COOKIE_NAME:'session',
+  APP_SESSION_COOKIE_DOMAIN:'localhost',
+  APP_SESSION_COOKIE_ENCYRPTION:'omplex_password_at_least_32_characters_long',
+  SFCC_SCAPI_PRIVATE_CLIENT_ID_R1:'jshfkjashfkdsajh8887',
+  CONFIG_CONTENTFUL_DELIVERY_API_TOKEN: 'DELIVERY-TOKEN-x6fYAxHpymJkcfGtT5aZRNz9V9uM3SixYPseCAX',
+  CONFIG_CONTENTFUL_PREVIEW_API_TOKEN: 'PREVIEW-TOKEN-xU2pAeRdsDB7txnQrCBFfMm9N3icrPtJ536cP',
+  CONFIG_CONTENTFUL_SPACE_ID: 'SPACE-ID-2sl55',
+  CONFIG_CONTENTFUL_ENVIRONMENT: 'development',
+  CONFIG_CONTENTFUL_DELIVERY_REST_API_BASE_URL: 'https://cdn.contentful.com',
+  CONFIG_CONTENTFUL_PREVIEW_REST_API_BASE_URL: 'https://preview.contentful.com',
+  CONFIG_CONTENTFUL_COMPONENT_HEADER_ENTRY_ID: '2E5ZPRIcXiupx7e6ZFl2',
+  CONFIG_CONTENTFUL_COMPONENT_FOOTER_ENTRY_ID: '2E5ZPRIcXiupx7e6ZFlq',
+  CONFIG_DEFAULT_LOCALE: 'en-us',
+  CONFIG_CONTENTFUL_DEFAULT_CACHE_EXPIRE:'10',
+  CONFIG_LOCALES_LIST: '["en-cy","fr-fr", "en-fr", "en-gb", "de-at", "it-it", "de-de", "en-pt", "en-dk", "fr-be", "en-ie", "fr-lu", "en-nl", "en-pl", "en-se", "en-ch", "en-es", "en-no", "en-cz", "en-fi", "en-gr", "en-hu", "en-ro", "en-bg", "en-hr", "en-sk", "en-si", "en-lv", "en-lt", "fr-mc", "en-us", "en-ca", "en-mx", "en-au", "zh-cn", "en-hk", "en-sg", "ja-jp", "ko-kr", "zh-tw", "en-mo", "en-my", "en-th", "en-ae", "en-il", "en-sa"]',
+  CONFIG_LOCALE_RAW_CONFIG_JSON_PATH: './src/config/rawLocaleConf.json',
+  CONFIG_ALGOLIA_APPLICATION_ID:'AMQAlgoliaApplicationID',
+  CONFIG_ALGOLIA_ADMIN_API_KEY:'AMQAlgoliaAdminApiKey',
+});

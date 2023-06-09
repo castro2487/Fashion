@@ -1,0 +1,9 @@
+dist
+*.js
+plop-templates/
+.next
+public
+.*.js
+cypress
+**/*.tsx
+**/*.spec.ts

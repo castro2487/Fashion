@@ -1,0 +1,1 @@
+export { SubmittableInput } from './SubmittableInput';

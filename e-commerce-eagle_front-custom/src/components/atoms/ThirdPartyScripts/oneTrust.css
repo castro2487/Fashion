@@ -1,0 +1,93 @@
+/* mobile */
+#onetrust-button-group {
+  display: flex !important;
+  flex-direction: column;
+}
+/* cookie settings button */
+#onetrust-button-group #onetrust-accept-btn-handler {
+  margin-bottom: 0 !important;
+  order: -1;
+  min-width: 100% !important;
+  font-weight: 400 !important;
+  font-size: 12px !important;
+  line-height: 13px !important;
+  letter-spacing: 0.02em !important;
+  height: 48px !important;
+}
+
+.cookie-setting-link {
+  margin-bottom: 0;
+}
+
+#onetrust-consent-sdk {
+  display: flex;
+  max-width: 960px !important;
+}
+
+#onetrust-button-group #onetrust-pc-btn-handler {
+  min-width: 100% !important;
+  font-family: 'Helvetica Neue' !important;
+  font-weight: 400 !important;
+  font-size: 12px !important;
+  line-height: 13px !important;
+  letter-spacing: 0.02em !important;
+  margin-top: auto !important;
+  background: white !important;
+  text-decoration: none !important;
+  border: 1px solid black !important;
+  text-transform: uppercase !important;
+
+  height: 48px !important;
+}
+
+/* to reset the onetrust margins injected in this page headers */
+@media (max-width: 47.99em) {
+  #onetrust-button-group-parent
+    #onetrust-button-group
+    #onetrust-accept-btn-handler,
+  #onetrust-button-group-parent
+    #onetrust-button-group
+    #onetrust-pc-btn-handler {
+    margin: 7px !important;
+  }
+}
+/* to add the spacing between the buttons and text on mobile */
+#onetrust-button-group {
+  margin-top: 16px !important;
+  margin-bottom: 16px !important;
+}
+#onetrust-button-group-parent {
+  padding-top: 9px !important;
+}
+
+/* desktop */
+@media only screen and (min-width: 1024px) {
+  #onetrust-consent-sdk {
+    max-width: 1440px !important;
+  }
+
+  #onetrust-button-group-parent {
+    position: absolute !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    margin: 0 10px 10px 0 !important;
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    align-items: flex-end !important;
+  }
+
+  #onetrust-button-group {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 300px !important;
+    max-width: 100% !important;
+  }
+
+  #onetrust-button-group #onetrust-pc-btn-handler {
+    min-width: 14.6875rem !important;
+  }
+
+  #onetrust-button-group #onetrust-accept-btn-handler {
+    min-width: unset !important;
+  }
+}
